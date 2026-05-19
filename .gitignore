@@ -1,0 +1,109 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===== Virtual environments =====
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===== Streamlit =====
+.streamlit/secrets.toml
+
+# ===== Node / pptxgenjs build deps =====
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== Modelos / artefactos pesados =====
+# NOTA: los .pkl SI se versionan (modelo entrenado del proyecto)
+*.joblib
+*.h5
+*.onnx
+*.parquet
+mlruns/
+mlflow/
+
+# ===== Datos crudos (no versionar PII) =====
+data/raw/
+data/interim/
+data/external/
+*.sqlite
+*.db
+
+# ===== Logs y despliegue =====
+logs/
+*.log
+logs.zip
+deploy.zip
+*.zip
+
+# ===== Azure / deploy temporales =====
+.deployment
+.azure/
+.vscode/
+*.publishsettings
+
+# ===== Temporales del proyecto =====
+_ante.py
+_ante.txt
+_inspect.py
+_smoke.py
+_tmp_*
+*.bak
+*.tmp
+
+# ===== Sistema operativo =====
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ===== Editores =====
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== Cobertura / tests =====
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# ===== Secretos =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key

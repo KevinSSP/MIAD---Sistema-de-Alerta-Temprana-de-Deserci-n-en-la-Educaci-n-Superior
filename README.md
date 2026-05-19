@@ -44,6 +44,30 @@ El proyecto avanza hacia la consolidación de un prototipo funcional que incluye
 
 ---
 
+## ▶️ Ejecutar el aplicativo web (prototipo)
+
+El prototipo es una aplicación **Streamlit** que carga el modelo serializado en `Code/modelo_xgboost_desercion_V1.1.1.pkl` y expone:
+
+* Predicción individual mediante formulario agrupado (demográfico / socioeconómico / académico).
+* Carga masiva por CSV con descarga de resultados.
+* Insights 360 con distribución de riesgo, cortes por estrato/beca/sector/área y vista por estudiante.
+
+```powershell
+# 1. Crear y activar entorno virtual (Windows / PowerShell)
+python -m venv .venv
+. .venv\Scripts\Activate.ps1
+
+# 2. Instalar dependencias
+pip install -r requirements.txt
+
+# 3. Lanzar la app
+streamlit run app.py
+```
+
+Se abrirá en `http://localhost:8501`. Use la sección **Ayuda** para ver el diccionario de variables esperadas en el CSV.
+
+---
+
 ## 👥 Equipo de Trabajo - Grupo 10
 *   **Carol Johana Peña Pico**.
 *   **Kevin Snaider Sánchez Prieto**
