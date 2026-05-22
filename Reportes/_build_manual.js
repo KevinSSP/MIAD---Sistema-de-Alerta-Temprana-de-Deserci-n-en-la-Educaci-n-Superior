@@ -1,20 +1,27 @@
-/* Genera Reportes/Manual_Usuario_SAT-DE.docx */
+/* Genera Reportes/Manual_Usuario_SAT-DE.docx (v2 - mayo 2026) */
 const fs = require("fs");
 const path = require("path");
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   Header, Footer, AlignmentType, LevelFormat, HeadingLevel,
   BorderStyle, WidthType, ShadingType, PageNumber, PageBreak,
-  TableOfContents, Bookmark, InternalHyperlink, ExternalHyperlink,
+  TableOfContents, ExternalHyperlink,
 } = require("docx");
 
 // --------- helpers ----------
-const BRAND = "1D4ED8";
-const INK   = "0F172A";
-const MUTED = "475569";
-const LINE  = "E2E8F0";
+const BRAND   = "1D4ED8";
+const NAVY    = "1E3A8A";
+const SKY     = "0EA5E9";
+const INK     = "0F172A";
+const MUTED   = "475569";
+const LINE    = "E2E8F0";
+const OK      = "16A34A";
+const WARN    = "EAB308";
+const BAD     = "DC2626";
+const CRIT    = "B91C1C";
+const NORMAL  = "0EA5E9";
 
-const border = (color = LINE) => ({ style: BorderStyle.SINGLE, size: 6, color });
+const border = (color = LINE, size = 6) => ({ style: BorderStyle.SINGLE, size, color });
 const cellBorders = {
   top: border(LINE), bottom: border(LINE), left: border(LINE), right: border(LINE),
 };
@@ -43,13 +50,32 @@ const STEP = (text) => new Paragraph({
   children: [new TextRun({ text })],
 });
 
+const CODE = (text) => new Paragraph({
+  spacing: { after: 100 },
+  shading: { fill: "0F172A", type: ShadingType.CLEAR, color: "auto" },
+  border: { left: { style: BorderStyle.SINGLE, size: 18, color: SKY } },
+  children: [new TextRun({ text, font: "Consolas", size: 18, color: "E2E8F0" })],
+});
+
+const LINK = (text, url) => new Paragraph({
+  spacing: { after: 120 },
+  children: [
+    new ExternalHyperlink({
+      link: url,
+      children: [new TextRun({ text, style: "Hyperlink", color: BRAND, underline: { type: "single", color: BRAND } })],
+    }),
+  ],
+});
+
 const CELL = (children, opts = {}) => new TableCell({
   borders: cellBorders,
   margins: { top: 90, bottom: 90, left: 140, right: 140 },
   width: { size: opts.width, type: WidthType.DXA },
   shading: opts.head
     ? { fill: BRAND, type: ShadingType.CLEAR, color: "auto" }
-    : (opts.zebra ? { fill: "F8FAFC", type: ShadingType.CLEAR, color: "auto" } : undefined),
+    : (opts.fill
+        ? { fill: opts.fill, type: ShadingType.CLEAR, color: "auto" }
+        : (opts.zebra ? { fill: "F8FAFC", type: ShadingType.CLEAR, color: "auto" } : undefined)),
   children: Array.isArray(children) ? children : [children],
 });
 
@@ -63,7 +89,7 @@ const TXT = (text, opts = {}) => new Paragraph({
   })],
 });
 
-function buildTable(rows, columnWidths) {
+function buildTable(rows, columnWidths, opts = {}) {
   const totalWidth = columnWidths.reduce((a, b) => a + b, 0);
   return new Table({
     width: { size: totalWidth, type: WidthType.DXA },
@@ -104,6 +130,8 @@ const callout = (title, body, color = BRAND) => new Table({
 });
 
 // --------- portada ----------
+const APP_URL = "https://miadsatde-h9fndjhfg7esaeet.centralus-01.azurewebsites.net/";
+
 const cover = [
   new Paragraph({
     spacing: { before: 2400, after: 120 },
@@ -116,7 +144,7 @@ const cover = [
   }),
   new Paragraph({
     spacing: { after: 480 },
-    children: [new TextRun({ text: "Versión 1.0   ·   Mayo de 2026", size: 22, color: MUTED })],
+    children: [new TextRun({ text: "Versión 2.0   ·   Mayo de 2026", size: 22, color: MUTED })],
   }),
   new Paragraph({
     border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: BRAND, space: 4 } },
@@ -124,9 +152,7 @@ const cover = [
   }),
   new Paragraph({
     spacing: { before: 200, after: 80 },
-    children: [
-      new TextRun({ text: "Proyecto Aplicado en Analítica de Datos\n", size: 22, color: INK }),
-    ],
+    children: [new TextRun({ text: "Proyecto Aplicado en Analítica de Datos", size: 22, color: INK })],
   }),
   new Paragraph({
     spacing: { after: 0 },
@@ -137,9 +163,14 @@ const cover = [
     children: [new TextRun({ text: "Universidad de los Andes – Grupo 10", size: 22, color: INK })],
   }),
   new Paragraph({
-    spacing: { after: 0 },
-    children: [new TextRun({ text: "Modelo subyacente: XGBoost v1.1.1", size: 22, color: MUTED })],
+    spacing: { after: 240 },
+    children: [new TextRun({ text: "Modelo subyacente: XGBoost v1.1.1 · Clasificación de riesgo en 5 categorías", size: 22, color: MUTED })],
   }),
+  callout(
+    "Aplicación desplegada (acceso público)",
+    "La plataforma está publicada en Azure App Service. Cualquier usuario con la URL puede acceder directamente desde un navegador moderno, sin instalación local: " + APP_URL,
+    OK
+  ),
   new Paragraph({ children: [new PageBreak()] }),
 ];
 
@@ -155,166 +186,278 @@ const toc = [
 // --------- 1. Qué es y qué hace ----------
 const sec1 = [
   H("1. ¿Qué es y qué hace SAT-DE?", HeadingLevel.HEADING_1),
-  P("SAT-DE es una aplicación web de alerta temprana que estima la probabilidad de que un estudiante de educación superior deserte en el siguiente período académico. Su propósito es apoyar la consejería académica entregando, además de la probabilidad, los factores que más influyen en la decisión y una recomendación textual para el caso."),
-  P("La aplicación expone tres capacidades principales:"),
-  BULLET("Predicción individual a través de un formulario guiado con los datos del estudiante."),
-  BULLET("Procesamiento por lote (CSV) para clasificar cohortes completas y descargar los resultados."),
-  BULLET("Insights 360 a nivel de cohorte: distribución del riesgo y cortes por dimensiones demográficas, socioeconómicas y académicas."),
+  P("SAT-DE es una aplicación web de alerta temprana que estima la probabilidad de que un estudiante de educación superior deserte en el siguiente período académico. Apoya la consejería académica entregando, además de la probabilidad, los factores que más influyen en la decisión y una recomendación textual."),
+  P("La aplicación expone cinco funcionalidades organizadas en páginas independientes:"),
+  BULLET("Inicio: explicación rápida del sistema y leyenda de los cinco niveles de riesgo."),
+  BULLET("Predicción individual: formulario guiado para evaluar un estudiante específico."),
+  BULLET("Carga masiva: clasificación por lote desde un archivo CSV."),
+  BULLET("Insights 360: visión agregada de una cohorte cargada."),
+  BULLET("Ayuda: diccionario de variables y tabla de umbrales de riesgo."),
 
   H("1.1 Componentes y arquitectura", HeadingLevel.HEADING_2),
-  P("SAT-DE se ejecuta como una aplicación Streamlit (Python) que carga en memoria un modelo XGBoost previamente entrenado (archivo .pkl). Los componentes son:"),
   buildTable(
     [
       ["Componente", "Tecnología", "Función"],
-      ["Interfaz de usuario", "Streamlit + Plotly", "Formularios, visualizaciones y navegación."],
+      ["Interfaz de usuario", "Streamlit + Plotly", "Formularios, visualizaciones interactivas y navegación."],
       ["Capa de inferencia", "scikit-learn + XGBoost", "Pre-procesamiento de variables y predicción."],
-      ["Explicabilidad", "SHAP nativo de XGBoost", "Factores que influyen en cada predicción."],
-      ["Modelo serializado", "modelo_xgboost_desercion_V1.1.1.pkl", "Pipeline pre-entrenado, 64 features."],
+      ["Explicabilidad", "Importancia agregada de XGBoost", "Factores que influyen en cada predicción individual."],
+      ["Modelo serializado", "modelo_xgboost_desercion_V1.1.1.pkl", "Pipeline pre-entrenado (64 features esperadas)."],
+      ["Hosting", "Azure App Service (Linux, Python 3.12)", "Publicación pública en " + APP_URL],
     ],
     [2200, 2800, 4360]
   ),
 
   H("1.2 Ventajas", HeadingLevel.HEADING_2),
-  BULLET("Modelo XGBoost entrenado y validado sobre datos históricos colombianos de educación superior."),
-  BULLET("Explicabilidad por estudiante: además del riesgo, se muestran los factores que aportan a la decisión."),
-  BULLET("Tres modos de uso (individual, masivo, agregado) con una única interfaz unificada."),
-  BULLET("Visualizaciones interactivas (Plotly) y exportación de resultados en CSV."),
-  BULLET("Pensada para uso interno: no requiere conexión a sistemas externos ni envío de datos a terceros."),
+  BULLET("Modelo XGBoost entrenado y validado sobre datos colombianos de educación superior (SPADIES + DANE)."),
+  BULLET("Clasificación de riesgo en 5 categorías (Crítico, Alto, Medio, Normal y Bajo) calibradas con la Tabla de Eficiencia Operativa Real."),
+  BULLET("Explicabilidad por estudiante: además del riesgo se muestran los factores que aportan a la decisión."),
+  BULLET("Cinco modos de uso unificados en una sola aplicación web."),
+  BULLET("Visualizaciones interactivas y exportación de resultados en CSV."),
+  BULLET("Acceso público a través de Azure App Service: cualquier usuario con la URL puede usar la herramienta sin instalación local."),
 
   H("1.3 Limitaciones", HeadingLevel.HEADING_2),
   BULLET("El modelo es estadístico: produce una probabilidad estimada, no una decisión definitiva sobre el estudiante."),
-  BULLET("Funciona sobre el esquema de 21 variables descrito en la sección 4; categorías o valores nuevos fuera del esquema son reemplazados o ignorados."),
+  BULLET("Funciona sobre el esquema de 21 variables descrito en el anexo; categorías o valores nuevos son ignorados por el preprocesador."),
   BULLET("La calidad de la predicción depende de la calidad y vigencia de los datos cargados."),
-  BULLET("La aplicación se ejecuta como prototipo local; no incluye autenticación de usuarios ni control de auditoría."),
+  BULLET("El despliegue actual no incluye autenticación de usuarios: cualquiera con la URL accede; se recomienda restringir vía red corporativa o agregar autenticación si se va a usar productivamente."),
   BULLET("El modelo se entrenó con datos hasta cierto período; un re-entrenamiento periódico es necesario para mantener su desempeño."),
 
   H("1.4 Advertencias de uso responsable", HeadingLevel.HEADING_2),
   callout("Importante",
     "Las predicciones de SAT-DE son una ayuda diagnóstica para la consejería académica. NO deben usarse como única fuente para sanciones, expulsiones o cualquier decisión que afecte derechos del estudiante. La interpretación final corresponde al consejero o equipo académico responsable.",
-    "DC2626"),
+    BAD),
   BULLET("La información cargada puede contener datos personales: trate el archivo CSV conforme a la política de protección de datos de la institución."),
   BULLET("No comparta capturas que expongan identificadores junto con la probabilidad de deserción."),
-  BULLET("Los umbrales de riesgo (Bajo / Medio / Alto) son institucionales y pueden requerir ajuste para su contexto."),
+  BULLET("Los umbrales de las 5 bandas de riesgo provienen de un análisis empírico (Tabla de Eficiencia Operativa Real) y pueden requerir ajuste para contextos diferentes."),
 
   new Paragraph({ children: [new PageBreak()] }),
 ];
 
-// --------- 2. Puesta en funcionamiento ----------
+// --------- 2. Acceso ----------
 const sec2 = [
-  H("2. Puesta en funcionamiento", HeadingLevel.HEADING_1),
+  H("2. Acceso a la aplicación", HeadingLevel.HEADING_1),
 
-  H("2.1 Conocimientos y habilidades del usuario", HeadingLevel.HEADING_2),
-  P("SAT-DE está pensada para dos perfiles: el usuario final (consejero académico) y el responsable técnico de instalación."),
+  H("2.1 Aplicación publicada (forma recomendada)", HeadingLevel.HEADING_2),
+  P("SAT-DE está desplegada en Azure App Service y es accesible desde cualquier navegador moderno (Chrome, Edge, Firefox, Safari) sin necesidad de instalar Python ni dependencias."),
+  callout(
+    "URL pública",
+    APP_URL,
+    OK
+  ),
+  LINK(APP_URL, APP_URL),
+  STEP("Abrir el navegador y pegar la URL anterior en la barra de direcciones."),
+  STEP("Esperar a que cargue la página (la primera carga puede tomar 20–40 segundos si el servidor estaba en reposo)."),
+  STEP("Usar la barra lateral izquierda para navegar entre las cinco páginas (Inicio, Predicción individual, Carga masiva, Insights 360, Ayuda)."),
+  P("No se requiere usuario ni contraseña en esta versión. Si la institución decide restringir el acceso, deberá aplicarse a nivel de red o agregar autenticación en Azure (ver sección 4.5)."),
+
+  H("2.2 Ejecución local (desarrollo y pruebas)", HeadingLevel.HEADING_2),
+  P("Esta opción aplica solo al equipo técnico o al usuario que desee ejecutar el aplicativo sin conexión a Azure."),
+  P("Requisitos previos:"),
+  BULLET("Sistema operativo Windows 10/11, macOS o Linux."),
+  BULLET("Python 3.12 o superior con pip habilitado."),
+  BULLET("Aproximadamente 1 GB de espacio libre para dependencias."),
+  BULLET("Navegador moderno."),
+  STEP("Clonar o descargar el repositorio del proyecto."),
+  STEP("Abrir una terminal y ubicarse en la carpeta raíz."),
+  CODE("python -m venv .venv"),
+  CODE(".\\.venv\\Scripts\\Activate.ps1     # Windows PowerShell"),
+  CODE("source .venv/bin/activate          # macOS / Linux"),
+  CODE("pip install -r requirements.txt"),
+  STEP("Verificar que existe el archivo Code/modelo_xgboost_desercion_V1.1.1.pkl."),
+  CODE("streamlit run app.py"),
+  P("Streamlit abrirá automáticamente el navegador en http://localhost:8501."),
+
+  H("2.3 Perfiles de usuario", HeadingLevel.HEADING_2),
   buildTable(
     [
-      ["Perfil", "Conocimientos requeridos"],
-      ["Usuario final", "Manejo básico de navegador web; comprensión de los conceptos de probabilidad, riesgo y promedio académico; manejo de archivos CSV en Excel o similar."],
-      ["Responsable técnico", "Línea de comandos (PowerShell o Bash); Python 3.12 o superior; instalación de paquetes con pip; redes locales y puertos."],
+      ["Perfil", "Necesita instalar algo?", "Forma de acceso"],
+      ["Consejero / decano / coordinador", "No", "Abre la URL pública (sección 2.1)."],
+      ["Responsable técnico", "Sí (Python + dependencias)", "Ejecuta localmente (sección 2.2) y publica en Azure (sección 4)."],
+      ["Equipo TI institucional", "Solo si va a re-desplegar", "Sigue la guía de despliegue (sección 4)."],
     ],
-    [2500, 6860]
+    [3000, 2400, 3960]
   ),
-
-  H("2.2 Requisitos previos", HeadingLevel.HEADING_2),
-  BULLET("Sistema operativo Windows 10/11, macOS o Linux."),
-  BULLET("Python 3.12 o superior (recomendado) con pip habilitado."),
-  BULLET("Acceso a internet la primera vez (para descargar dependencias)."),
-  BULLET("Navegador moderno (Chrome, Edge, Firefox)."),
-  BULLET("Aproximadamente 1 GB de espacio libre en disco para dependencias."),
-
-  H("2.3 Descarga e instalación", HeadingLevel.HEADING_2),
-  P("Los pasos siguientes se ejecutan UNA sola vez en el equipo donde se hospedará la aplicación."),
-  STEP("Descargar el repositorio del proyecto desde el portal institucional o clonarlo con Git en una carpeta local."),
-  STEP("Abrir una terminal (PowerShell en Windows) y ubicarse en la carpeta del proyecto."),
-  STEP("Crear un entorno virtual de Python:  python -m venv .venv"),
-  STEP("Activarlo:  .\\.venv\\Scripts\\Activate.ps1  (Windows) o  source .venv/bin/activate  (macOS/Linux)."),
-  STEP("Instalar las dependencias:  pip install -r requirements.txt"),
-  STEP("Verificar que el archivo Code/modelo_xgboost_desercion_V1.1.1.pkl está presente."),
-  STEP("Lanzar la aplicación:  streamlit run app.py"),
-  P("Streamlit abrirá automáticamente el navegador en la dirección http://localhost:8501."),
-
-  H("2.4 Actualización del aplicativo", HeadingLevel.HEADING_2),
-  STEP("Detener la aplicación con Ctrl + C en la terminal."),
-  STEP("Descargar o sincronizar la nueva versión del repositorio (git pull o reemplazo manual)."),
-  STEP("Reinstalar dependencias si requirements.txt cambió:  pip install -r requirements.txt"),
-  STEP("Si el archivo .pkl del modelo fue reemplazado, no se requiere ninguna acción adicional: la aplicación detecta el archivo al iniciar."),
-  STEP("Volver a ejecutar  streamlit run app.py"),
-
-  H("2.5 Acceso a la versión publicada", HeadingLevel.HEADING_2),
-  P("Cuando la aplicación se publica en un servidor (por ejemplo Azure App Service), el usuario final no necesita instalar nada: basta con abrir la URL que proporcione la institución desde un navegador moderno."),
 
   new Paragraph({ children: [new PageBreak()] }),
 ];
 
 // --------- 3. Casos de uso ----------
 const sec3 = [
-  H("3. Casos de uso y guías paso a paso", HeadingLevel.HEADING_1),
-  P("SAT-DE soporta tres casos de uso principales. Todos se realizan desde la barra lateral de navegación."),
-  buildTable(
-    [
-      ["Caso de uso", "Descripción", "Sección de la app"],
-      ["Evaluar a un estudiante", "Cuando se desea analizar un caso individual con su perfil completo.", "Predicción individual"],
-      ["Evaluar una cohorte", "Cuando hay un grupo de estudiantes en un archivo CSV.", "Carga masiva"],
-      ["Explorar la cohorte", "Cuando ya se procesó un CSV y se desea analizarlo por dimensiones.", "Insights 360"],
-    ],
-    [2400, 4960, 2000]
-  ),
+  H("3. Guía de uso por página", HeadingLevel.HEADING_1),
+  P("La barra lateral izquierda muestra las cinco páginas disponibles. A continuación se explica cada una con su propósito, los pasos y los resultados esperados."),
 
-  H("3.1 Caso 1 · Predicción individual", HeadingLevel.HEADING_2),
-  P("Indicado para consejería caso a caso. El consejero ingresa los datos del estudiante y obtiene la probabilidad estimada, el nivel de riesgo y los factores explicativos."),
+  H("3.1 Página Inicio", HeadingLevel.HEADING_2),
+  P("Propósito: presentar la aplicación y la leyenda con los cinco niveles de riesgo manejados por la plataforma. Es el punto de entrada por defecto."),
+  P("Qué se muestra:"),
+  BULLET("Encabezado corporativo con la fecha del día y la versión del modelo."),
+  BULLET("Tres tarjetas resumen de las funcionalidades (Predicción individual, Carga masiva, Insights 360)."),
+  BULLET("Leyenda con las cinco categorías de riesgo y sus rangos de probabilidad."),
+  P("Cuándo usarla: como pantalla de bienvenida, para recordar los rangos exactos antes de interpretar resultados."),
+
+  H("3.2 Página Predicción individual", HeadingLevel.HEADING_2),
+  P("Indicada para consejería caso a caso. El consejero ingresa los datos del estudiante y obtiene la probabilidad estimada, el nivel de riesgo, la decisión sugerida y los factores explicativos."),
   STEP("En la barra lateral, seleccionar 👤 Predicción individual."),
   STEP("Completar las tres secciones del formulario: Demográfico, Socioeconómico y Académico. Todos los campos son requeridos."),
   STEP("Hacer clic en el botón Calcular riesgo (botón principal al final del formulario)."),
-  STEP("La aplicación mostrará:  (i) la insignia de riesgo (Bajo, Medio o Alto);  (ii) la probabilidad de deserción como porcentaje;  (iii) la barra Deserción / Permanencia;  (iv) los cinco factores más influyentes con su contribución relativa y dirección (Riesgo o Protección);  (v) una recomendación textual."),
-  STEP("Modificar valores del formulario y volver a calcular para realizar análisis de sensibilidad."),
-  callout("Interpretación",
-    "Una variable marcada como 'Riesgo' aporta a aumentar la probabilidad de deserción; 'Protección' aporta a disminuirla. El porcentaje refleja la importancia relativa entre los cinco factores mostrados.",
-    BRAND),
+  STEP("La aplicación mostrará:"),
+  BULLET("La insignia de riesgo en uno de los 5 niveles (Crítico, Alto, Medio, Normal o Bajo).", 1),
+  BULLET("La probabilidad de deserción como porcentaje.", 1),
+  BULLET("La Decisión sugerida correspondiente a la banda (ver sección 3.6).", 1),
+  BULLET("Barra horizontal Deserción / Permanencia.", 1),
+  BULLET("Top-5 de factores influyentes con contribución relativa y dirección (Riesgo o Protección).", 1),
+  BULLET("Recomendación textual coherente con la banda de riesgo.", 1),
+  STEP("Modificar valores y volver a calcular para realizar análisis de sensibilidad sobre un mismo estudiante."),
+  callout(
+    "Interpretación de factores",
+    "Una variable marcada como 'Riesgo' aporta a aumentar la probabilidad de deserción; 'Protección' aporta a disminuirla. El porcentaje refleja la importancia relativa entre los cinco factores mostrados, no la magnitud absoluta del efecto.",
+    BRAND
+  ),
 
-  H("3.2 Caso 2 · Carga masiva por CSV", HeadingLevel.HEADING_2),
-  P("Indicado para clasificar una cohorte completa. La aplicación valida el archivo, calcula la predicción de cada fila y permite descargar los resultados."),
+  H("3.3 Página Carga masiva", HeadingLevel.HEADING_2),
+  P("Indicada para clasificar una cohorte completa. La aplicación valida el archivo, calcula la predicción de cada fila y permite descargar los resultados."),
   STEP("En la barra lateral, seleccionar 📥 Carga masiva."),
   STEP("Abrir el expander 'Ver columnas esperadas / descargar plantilla' para conocer el esquema exacto."),
-  STEP("Descargar la plantilla CSV vacía si se desea trabajar a partir de ella, o usar el archivo de ejemplo Code/estudiantes_sinteticos_11500.csv."),
-  STEP("Diligenciar el CSV respetando los nombres de columnas, los valores admitidos para variables categóricas y los rangos numéricos (ver sección 4)."),
+  STEP("Descargar la plantilla CSV vacía si se desea trabajar a partir de ella, o usar un dataset propio que respete las 21 variables."),
+  STEP("Diligenciar el CSV respetando los nombres de columnas, los valores admitidos para variables categóricas y los rangos numéricos (ver anexo)."),
   STEP("Cargar el archivo arrastrándolo al cuadro 'Archivo CSV' o usando el botón Browse files."),
-  STEP("Revisar las advertencias amarillas (categorías desconocidas) y los errores rojos (esquema inválido). En caso de error, corregir el CSV y volver a cargar."),
-  STEP("La aplicación procesa el archivo y muestra: KPIs de la cohorte, tabla de resultados filtrable por nivel de riesgo y botón de descarga del CSV con predicciones."),
-  STEP("Filtrar por Alto / Medio / Bajo desde el selector multiselect para enfocar el análisis."),
+  STEP("Revisar advertencias amarillas (categorías desconocidas) o errores rojos (esquema inválido). Si aparecen errores, corregir el CSV y volver a cargar."),
+  STEP("La aplicación muestra cuatro KPIs: total de estudiantes, riesgo crítico, % prioritarios (Crítico + Alto) y probabilidad media."),
+  STEP("Filtrar la tabla por una o varias bandas de riesgo desde el selector multiselect."),
   STEP("Hacer clic en ⬇️ Descargar resultados (CSV) para obtener el archivo con las columnas originales más prob_desercion, riesgo y prediccion."),
+  callout(
+    "Persistencia entre páginas",
+    "La cohorte cargada queda en memoria de la sesión: al pasar a Insights 360 no es necesario volver a cargar el CSV. Si se cierra la pestaña del navegador o se reinicia el servidor, se pierde y debe cargarse nuevamente.",
+    SKY
+  ),
 
-  H("3.3 Caso 3 · Insights 360 de la cohorte", HeadingLevel.HEADING_2),
-  P("Indicado para explorar la cohorte ya cargada. Si aún no se ha cargado un CSV, la sección lo solicitará explícitamente."),
-  STEP("Cargar primero la cohorte usando 📥 Carga masiva (Caso 2)."),
+  H("3.4 Página Insights 360", HeadingLevel.HEADING_2),
+  P("Indicada para explorar la cohorte ya cargada por dimensiones agregadas. Si aún no se ha cargado un CSV, la sección lo solicitará explícitamente."),
+  STEP("Cargar primero la cohorte usando 📥 Carga masiva (paso 3.3)."),
   STEP("Seleccionar 📊 Insights 360 en la barra lateral."),
-  STEP("Revisar los KPIs superiores: total de estudiantes, número y porcentaje en cada nivel de riesgo."),
+  STEP("Revisar los cinco KPIs superiores: total, Crítico, Alto, Medio y % prioritarios."),
   STEP("Navegar entre las cuatro pestañas:"),
-  BULLET("Distribución: histograma de la probabilidad y donut con la composición por nivel de riesgo.", 1),
+  BULLET("Distribución: histograma de la probabilidad coloreado por banda de riesgo y donut con la composición porcentual de las 5 categorías.", 1),
   BULLET("Demográfico / Socioeconómico: riesgo medio por estrato, por beca y distribución por zona de residencia.", 1),
-  BULLET("Académico: riesgo medio por área de conocimiento y diagrama de dispersión entre promedio académico y materias reprobadas.", 1),
+  BULLET("Académico: riesgo medio por área de conocimiento y diagrama de dispersión entre promedio académico y materias reprobadas (coloreado por banda).", 1),
   BULLET("Detalle: tabla ordenada de mayor a menor probabilidad, lista para análisis caso por caso.", 1),
   STEP("Cada gráfico es interactivo: hover para detalles, doble clic en la leyenda para aislar series, y selección rectangular en los scatter para hacer zoom."),
+  STEP("Descargar cualquier gráfico como PNG desde el ícono de cámara en la barra superior del gráfico (Plotly toolbar)."),
 
-  H("3.4 Visualización y descarga", HeadingLevel.HEADING_2),
-  P("Todas las visualizaciones tienen un menú flotante (esquina superior derecha del gráfico) que permite descargarlas como imagen PNG. La tabla detallada también puede copiarse al portapapeles."),
+  H("3.5 Página Ayuda", HeadingLevel.HEADING_2),
+  P("Indicada para consultar el diccionario de variables y los umbrales aplicados por la plataforma."),
+  BULLET("Diccionario de variables: tabla con las 21 variables, su etiqueta legible, su tipo (categórica, binaria, ordinal o numérica) y los valores admitidos."),
+  BULLET("Umbrales de riesgo: cinco tarjetas con los rangos exactos de cada banda y la acción sugerida, seguidas de una tabla con probabilidad mínima/máxima, % de población esperado, tasa de deserción interna y acción."),
+  BULLET("Pie de página con la versión del modelo (XGBoost v1.1.1) y el equipo responsable."),
+
+  H("3.6 Tabla de decisiones y umbrales", HeadingLevel.HEADING_2),
+  P("La aplicación clasifica cada estudiante en una de las cinco bandas siguientes según la probabilidad estimada de deserción. La 'Decisión sugerida' es la acción recomendada por defecto y aparece tanto en la página individual como en la recomendación textual."),
   buildTable(
     [
-      ["Acción", "Cómo realizarla"],
-      ["Descargar un gráfico", "Pasar el cursor sobre el gráfico → ícono de cámara en la barra superior del Plotly."],
-      ["Descargar la tabla", "En Carga masiva, usar el botón Descargar resultados (CSV)."],
-      ["Compartir un análisis", "Capturar pantalla del navegador o exportar el CSV con las predicciones."],
+      ["Banda", "Rango de probabilidad", "Decisión sugerida", "% población esperado", "Tasa deserción interna"],
+      ["Bajo",    "< 30.98 %",              "Permanencia",              "53.07 %", "6.42 %"],
+      ["Normal",  "30.98 % – 51.33 %",      "Seguimiento",              "13.00 %", "23.14 %"],
+      ["Medio",   "51.33 % – 69.27 %",      "Plan de acompañamiento",   "8.54 %",  "38.59 %"],
+      ["Alto",    "69.27 % – 84.87 %",      "Intervención focalizada",  "8.89 %",  "57.93 %"],
+      ["Crítico", "≥ 84.87 %",              "Intervención inmediata",   "16.50 %", "83.97 %"],
     ],
-    [3000, 6360]
+    [1400, 2400, 2400, 1580, 1580]
   ),
 
   new Paragraph({ children: [new PageBreak()] }),
 ];
 
-// --------- 4. Anexos ----------
+// --------- 4. Despliegue ----------
 const sec4 = [
-  H("4. Anexo · Esquema de variables", HeadingLevel.HEADING_1),
-  P("Las 21 variables esperadas por SAT-DE, agrupadas por dimensión. Para el detalle exhaustivo de categorías, consulte la pestaña Ayuda dentro de la aplicación."),
+  H("4. Despliegue de la aplicación", HeadingLevel.HEADING_1),
+  P("Esta sección describe cómo publicar SAT-DE en Azure App Service, que es la modalidad utilizada actualmente en producción. La aplicación corre como un proceso Streamlit dentro de un App Service Linux con Python 3.12."),
 
-  H("4.1 Variables académicas", HeadingLevel.HEADING_2),
+  H("4.1 Resumen de la arquitectura desplegada", HeadingLevel.HEADING_2),
+  buildTable(
+    [
+      ["Recurso", "Descripción"],
+      ["App Service Plan", "Plan Linux (recomendado B1 o superior) en la región Central US."],
+      ["App Service", "miadsatde – ejecuta Python 3.12 con Streamlit."],
+      ["Runtime", "Python 3.12 (built-in en App Service)."],
+      ["Comando de inicio", "python -m streamlit run app.py --server.port 8000 --server.address 0.0.0.0"],
+      ["Almacenamiento", "El .pkl del modelo viaja con el repositorio (Code/modelo_xgboost_desercion_V1.1.1.pkl)."],
+      ["URL pública", APP_URL],
+    ],
+    [2400, 6960]
+  ),
+
+  H("4.2 Pre-requisitos para desplegar", HeadingLevel.HEADING_2),
+  BULLET("Cuenta de Azure con permisos de Contributor sobre la suscripción objetivo."),
+  BULLET("Azure CLI instalado (az --version ≥ 2.60) o acceso al Portal de Azure."),
+  BULLET("Git instalado localmente."),
+  BULLET("Repositorio del proyecto con los archivos requirements.txt, app.py, src/ y Code/modelo_xgboost_desercion_V1.1.1.pkl."),
+
+  H("4.3 Despliegue paso a paso con Azure CLI", HeadingLevel.HEADING_2),
+  STEP("Autenticarse en Azure desde la terminal."),
+  CODE("az login"),
+  STEP("Definir variables de entorno locales para reutilizarlas (ajustar nombres si ya existen los recursos)."),
+  CODE("$rg=\"rg-miad-satde\"; $loc=\"centralus\"; $plan=\"plan-miad-satde\"; $app=\"miadsatde\""),
+  STEP("Crear el grupo de recursos."),
+  CODE("az group create -n $rg -l $loc"),
+  STEP("Crear el plan de App Service en Linux (sku B1)."),
+  CODE("az appservice plan create -g $rg -n $plan --is-linux --sku B1"),
+  STEP("Crear el Web App con runtime Python 3.12."),
+  CODE("az webapp create -g $rg -p $plan -n $app --runtime \"PYTHON:3.12\""),
+  STEP("Configurar el comando de inicio para que Streamlit escuche en el puerto 8000 expuesto por App Service."),
+  CODE("az webapp config set -g $rg -n $app --startup-file \"python -m streamlit run app.py --server.port 8000 --server.address 0.0.0.0\""),
+  STEP("Habilitar el build automático de dependencias al desplegar (App Service ejecuta pip install)."),
+  CODE("az webapp config appsettings set -g $rg -n $app --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true WEBSITES_PORT=8000"),
+  STEP("Empaquetar el repositorio en un archivo zip y subirlo."),
+  CODE("Compress-Archive -Path .\\* -DestinationPath app.zip -Force"),
+  CODE("az webapp deploy -g $rg -n $app --src-path app.zip --type zip"),
+  STEP("Esperar 2–4 minutos a que App Service instale dependencias y arranque Streamlit; luego abrir la URL pública."),
+  CODE("Start-Process \"" + APP_URL + "\""),
+
+  H("4.4 Despliegue desde Portal de Azure (alternativa visual)", HeadingLevel.HEADING_2),
+  STEP("Crear un App Service: Portal → Create resource → Web App. Seleccionar Publish=Code, Runtime=Python 3.12, OS=Linux, Region=Central US."),
+  STEP("En el plan, seleccionar B1 o superior."),
+  STEP("Una vez creado, ir a Configuration → General Settings → Startup Command y pegar:  python -m streamlit run app.py --server.port 8000 --server.address 0.0.0.0"),
+  STEP("En Configuration → Application Settings, agregar WEBSITES_PORT=8000 y SCM_DO_BUILD_DURING_DEPLOYMENT=true."),
+  STEP("En Deployment Center, conectar el repositorio (GitHub, Azure Repos o ZIP) y disparar el deploy."),
+  STEP("Esperar a que el contenedor se reinicie y validar la URL pública."),
+
+  H("4.5 Seguridad y endurecimiento (recomendado)", HeadingLevel.HEADING_2),
+  BULLET("Activar HTTPS Only en TLS/SSL settings."),
+  BULLET("Para limitar el acceso, configurar Access Restrictions a un rango de IP corporativo o integrar con Azure AD (App Service Authentication / EasyAuth)."),
+  BULLET("Habilitar Application Insights para monitorear errores y rendimiento."),
+  BULLET("Configurar reglas de Auto-scale si la concurrencia esperada supera ~20 usuarios simultáneos (escalado horizontal del plan)."),
+  BULLET("Cifrar variables sensibles vía Key Vault y referenciarlas desde App Settings si en el futuro se agregan credenciales o conexiones a bases externas."),
+
+  H("4.6 Actualización del aplicativo desplegado", HeadingLevel.HEADING_2),
+  STEP("Sincronizar localmente la nueva versión del repositorio (git pull o reemplazo manual)."),
+  STEP("Volver a empaquetar y subir el zip."),
+  CODE("Compress-Archive -Path .\\* -DestinationPath app.zip -Force"),
+  CODE("az webapp deploy -g $rg -n $app --src-path app.zip --type zip"),
+  STEP("Reiniciar el servicio (opcional, si el deploy no lo reinicia automáticamente)."),
+  CODE("az webapp restart -g $rg -n $app"),
+  STEP("Validar la URL pública. La primera carga tras un deploy puede tardar 30–60 segundos."),
+
+  H("4.7 Verificación post-despliegue", HeadingLevel.HEADING_2),
+  buildTable(
+    [
+      ["Prueba", "Resultado esperado"],
+      ["Abrir " + APP_URL, "Carga la página de Inicio con el encabezado azul y la leyenda de 5 niveles."],
+      ["Ir a Predicción individual y completar el formulario", "Devuelve insignia, probabilidad, decisión sugerida y top-5 factores."],
+      ["Cargar Code/estudiantes_sinteticos_11500.csv en Carga masiva", "Procesa la cohorte sin errores y muestra los 4 KPIs."],
+      ["Ir a Insights 360", "Muestra histograma, donut, KPIs y las 4 pestañas con gráficos."],
+      ["Ir a Ayuda", "Muestra el diccionario y la tabla de las 5 bandas con la decisión sugerida."],
+    ],
+    [4200, 5160]
+  ),
+
+  new Paragraph({ children: [new PageBreak()] }),
+];
+
+// --------- 5. Anexo ----------
+const sec5 = [
+  H("5. Anexo · Esquema de variables", HeadingLevel.HEADING_1),
+  P("Las 21 variables esperadas por SAT-DE, agrupadas por dimensión. Para el catálogo exhaustivo de categorías, consulte la página Ayuda dentro de la aplicación."),
+
+  H("5.1 Variables académicas", HeadingLevel.HEADING_2),
   buildTable(
     [
       ["Variable", "Tipo", "Rango / Valores"],
@@ -332,7 +475,7 @@ const sec4 = [
     [3000, 1800, 4560]
   ),
 
-  H("4.2 Variables demográficas y socioeconómicas", HeadingLevel.HEADING_2),
+  H("5.2 Variables demográficas y socioeconómicas", HeadingLevel.HEADING_2),
   buildTable(
     [
       ["Variable", "Tipo", "Rango / Valores"],
@@ -351,28 +494,40 @@ const sec4 = [
     [3000, 1800, 4560]
   ),
 
-  H("4.3 Umbrales de riesgo", HeadingLevel.HEADING_2),
+  H("5.3 Umbrales de riesgo (5 categorías)", HeadingLevel.HEADING_2),
+  P("Cortes exactos calibrados sobre la Tabla de Eficiencia Operativa Real."),
   buildTable(
     [
-      ["Nivel", "Probabilidad", "Decisión sugerida"],
-      ["Bajo", "< 30 %", "Seguimiento estándar"],
-      ["Medio", "30 % – 60 %", "Seguimiento focalizado"],
-      ["Alto", "≥ 60 %", "Intervención prioritaria"],
+      ["Banda", "Prob. mínima", "Prob. máxima", "% población esperado", "Tasa deserción interna", "Acción sugerida"],
+      ["Bajo",    "0.0089", "0.3097", "53.07 %", "6.42 %",  "Permanencia"],
+      ["Normal",  "0.3098", "0.5132", "13.00 %", "23.14 %", "Seguimiento"],
+      ["Medio",   "0.5133", "0.6921", "8.54 %",  "38.59 %", "Plan de acompañamiento"],
+      ["Alto",    "0.6927", "0.8486", "8.89 %",  "57.93 %", "Intervención focalizada"],
+      ["Crítico", "0.8487", "0.9803", "16.50 %", "83.97 %", "Intervención inmediata"],
     ],
-    [2200, 2800, 4360]
+    [1300, 1300, 1300, 1700, 1900, 1860]
   ),
 
-  H("5. Soporte y solución de problemas", HeadingLevel.HEADING_1),
+  new Paragraph({ children: [new PageBreak()] }),
+];
+
+// --------- 6. Soporte ----------
+const sec6 = [
+  H("6. Soporte y solución de problemas", HeadingLevel.HEADING_1),
   buildTable(
     [
       ["Síntoma", "Causa probable", "Acción sugerida"],
+      ["La URL pública carga lenta la primera vez", "El App Service estaba en reposo (cold start).", "Esperar 30–60 segundos; cargas posteriores son rápidas."],
       ["La página no abre en localhost:8501", "Streamlit no quedó en ejecución.", "Revisar la terminal y volver a ejecutar streamlit run app.py."],
-      ["Error 'Faltan columnas'", "El CSV no respeta el esquema.", "Descargar la plantilla y volver a cargar."],
-      ["Advertencia 'Valor desconocido en categoría'", "Una fila usa un valor fuera del catálogo.", "Corregir el valor según la sección 4."],
-      ["La predicción cambia mucho al editar un campo", "Variable de alto impacto (p.ej. materias reprobadas).", "Es comportamiento esperado del modelo; validar el valor real del estudiante."],
-      ["El archivo .pkl no carga", "Pickle ausente o ruta incorrecta.", "Verificar que Code/modelo_xgboost_desercion_V1.1.1.pkl existe."],
+      ["Error 'Faltan columnas requeridas'", "El CSV no respeta el esquema.", "Descargar la plantilla desde Carga masiva y reutilizar sus columnas."],
+      ["Advertencia 'Valores no vistos en …'", "Una fila usa un valor fuera del catálogo.", "Corregir el valor según el anexo (sección 5)."],
+      ["Error 'Feature shape mismatch'", "Esquema del CSV inconsistente con el modelo.", "Verificar que las 21 columnas están presentes y con los nombres exactos."],
+      ["Solo aparecen 1–2 bandas en la cohorte", "La cohorte tiene probabilidades muy concentradas.", "Es comportamiento esperado; revisar la distribución en Insights 360 → Distribución."],
+      ["La predicción cambia mucho al editar un campo", "Variable de alto impacto (ej. materias reprobadas).", "Es comportamiento esperado; validar el valor real del estudiante."],
+      ["El archivo .pkl no carga", "Pickle ausente o ruta incorrecta.", "Verificar que Code/modelo_xgboost_desercion_V1.1.1.pkl existe en el zip desplegado."],
+      ["Despliegue en Azure devuelve 'Application Error'", "Falta el startup command o el WEBSITES_PORT.", "Re-aplicar sección 4.3 pasos 6 y 7; revisar logs con  az webapp log tail."],
     ],
-    [2400, 3300, 3660]
+    [2600, 3000, 3760]
   ),
 
   H("Contacto", HeadingLevel.HEADING_2),
@@ -383,7 +538,7 @@ const sec4 = [
 const doc = new Document({
   creator: "MIAD Grupo 10",
   title: "Manual de Usuario · SAT-DE",
-  description: "Manual de usuario del Sistema de Alerta Temprana de Deserción en Educación Superior",
+  description: "Manual de usuario del Sistema de Alerta Temprana de Deserción en Educación Superior (v2)",
   styles: {
     default: { document: { run: { font: "Calibri", size: 22 } } }, // 11pt
     paragraphStyles: [
@@ -424,7 +579,7 @@ const doc = new Document({
         children: [new Paragraph({
           border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: BRAND, space: 4 } },
           children: [
-            new TextRun({ text: "SAT-DE  ·  Manual de Usuario", color: BRAND, bold: true, size: 18 }),
+            new TextRun({ text: "SAT-DE  ·  Manual de Usuario v2", color: BRAND, bold: true, size: 18 }),
             new TextRun({ text: "\t\tMIAD · Grupo 10 · Mayo 2026", color: MUTED, size: 18 }),
           ],
         })],
@@ -443,7 +598,7 @@ const doc = new Document({
         })],
       }),
     },
-    children: [...cover, ...toc, ...sec1, ...sec2, ...sec3, ...sec4],
+    children: [...cover, ...toc, ...sec1, ...sec2, ...sec3, ...sec4, ...sec5, ...sec6],
   }],
 });
 

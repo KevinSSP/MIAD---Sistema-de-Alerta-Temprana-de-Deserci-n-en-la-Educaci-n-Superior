@@ -228,7 +228,7 @@ function buildDiagram() {
       diagBox("Modelo XGBoost v1.1.1", [
         "scale_pos_weight balanceado",
         "GridSearchCV · 5-fold",
-        "Umbral 0.30 / 0.60",
+        "5 bandas: 0.31 / 0.51 / 0.69 / 0.85",
       ], BRAND),
       diagBox("Insights 360", [
         "Distribución de riesgo",
@@ -278,7 +278,7 @@ const cover = [
   new Paragraph({ spacing: { after: 0 },
     children: [new TextRun({ text: "Universidad de los Andes · Grupo 10", size: 22, color: INK })] }),
   new Paragraph({ spacing: { after: 0 },
-    children: [new TextRun({ text: "Versión 1.0 · Mayo de 2026", size: 22, color: MUTED })] }),
+    children: [new TextRun({ text: "Versión 2.0 · Mayo de 2026", size: 22, color: MUTED })] }),
   new Paragraph({ children: [new PageBreak()] }),
 ];
 
@@ -299,7 +299,7 @@ const partI = [
   BULLET("Bloque central (Procesamiento y modelo): un ColumnTransformer estandariza numéricas/ordinales y aplica one-hot a categóricas; tras la comparación entre Regresión Logística, Random Forest y XGBoost, este último resultó el seleccionado."),
   BULLET("Bloque derecho (Producto): la aplicación Streamlit expone tres flujos de uso al consejero académico (individual, lote, agregado 360)."),
   callout("Flujo de datos",
-    "Las 21 variables de entrada se transforman en 64 features que ingresan al modelo XGBoost; este devuelve una probabilidad continua que la capa de presentación traduce a tres niveles (Bajo, Medio, Alto) y acompaña con los factores SHAP más influyentes.",
+    "Las 21 variables de entrada se transforman en 64 features que ingresan al modelo XGBoost; este devuelve una probabilidad continua que la capa de presentación traduce a cinco niveles operativos (Bajo, Normal, Medio, Alto, Crítico) calibrados sobre la Tabla de Eficiencia Operativa Real, y acompaña con los factores más influyentes por instancia.",
     BRAND),
   new Paragraph({ children: [new PageBreak()] }),
 ];
@@ -364,17 +364,20 @@ const partII = [
   BULLET("Su comportamiento es estable bajo desbalance gracias al parámetro scale_pos_weight."),
   BULLET("Se integra naturalmente con SHAP nativo (TreeExplainer), habilitando la explicabilidad por instancia exigida por el caso de uso."),
 
-  H("2.6 Calibración por buckets de riesgo", HeadingLevel.HEADING_2),
-  P("Las probabilidades del modelo se segmentaron en 10 deciles. La tabla de eficiencia mostró separación monotónica entre buckets, lo que respalda los umbrales operativos finalmente adoptados por la aplicación."),
+  H("2.6 Calibración por buckets de riesgo (Tabla de Eficiencia Operativa Real)", HeadingLevel.HEADING_2),
+  P("Las probabilidades del modelo se segmentaron en 10 deciles y se reagruparon en cinco bandas operativas; la separación monotónica entre buckets respalda los cortes finalmente adoptados por la aplicación (v2.0, mayo 2026)."),
   dataTable(
     [
-      ["Nivel operativo", "Rango de probabilidad", "Color en UI", "Acción esperada"],
-      [{text:"Bajo"}, "p < 0.30", {text:"Verde", color: OK}, "Seguimiento estándar"],
-      [{text:"Medio"}, "0.30 ≤ p < 0.60", {text:"Amarillo", color: WARN}, "Seguimiento focalizado"],
-      [{text:"Alto"}, "p ≥ 0.60", {text:"Rojo", color: BAD}, "Intervención prioritaria"],
+      ["Banda", "Rango de probabilidad", "% población esperado", "Tasa deserción interna", "Acción sugerida"],
+      [{text:"Bajo"},    "p < 0.3098",            "53.07 %", "6.42 %",  "Permanencia"],
+      [{text:"Normal"},  "0.3098 ≤ p < 0.5133",   "13.00 %", "23.14 %", "Seguimiento"],
+      [{text:"Medio"},   "0.5133 ≤ p < 0.6927",   "8.54 %",  "38.59 %", "Plan de acompañamiento"],
+      [{text:"Alto"},    "0.6927 ≤ p < 0.8487",   "8.89 %",  "57.93 %", "Intervención focalizada"],
+      [{text:"Crítico", bold:true, color: BAD}, {text:"p ≥ 0.8487", bold:true}, {text:"16.50 %", bold:true}, {text:"83.97 %", bold:true}, {text:"Intervención inmediata", bold:true}],
     ],
-    [1800, 2400, 1800, 3360]
+    [1400, 2200, 1900, 1900, 1960]
   ),
+  P("El corte binario interno (campo prediccion) corresponde al umbral de la banda Alto (p ≥ 0.6927).", { run: { italics: true, color: MUTED, size: 18 } }),
 
   H("2.7 Explicabilidad (SHAP)", HeadingLevel.HEADING_2),
   P("La aplicación utiliza la explicabilidad nativa de XGBoost (pred_contribs=True) equivalente a TreeExplainer de SHAP. Las cinco variables con mayor mean(|SHAP|) en el conjunto de prueba fueron consistentes con la literatura sobre deserción:"),
@@ -439,18 +442,25 @@ const partIV = [
   H("IV. Archivos de código del prototipo", HeadingLevel.HEADING_1),
   P("Esta sección documenta los artefactos de código entregados con el prototipo, su organización y la forma de reproducir el trabajo."),
 
-  H("4.1 Repositorio", HeadingLevel.HEADING_2),
+  H("4.1 Repositorio y despliegue", HeadingLevel.HEADING_2),
   dataTable(
     [
       ["Aspecto", "Detalle"],
-      ["Nombre", "MIAD---Sistema-de-Alerta-Temprana-de-Desercion-en-la-Educacion-Superior"],
+      ["Nombre del repo", "MIAD---Sistema-de-Alerta-Temprana-de-Desercion-en-la-Educacion-Superior"],
       ["Plataforma", "GitHub (repositorio del Grupo 10 · MIAD)"],
       ["Ramas", "main (producción del prototipo) · feature/* (desarrollos)"],
       ["Licencia", "Uso académico interno – Universidad de los Andes"],
       ["Lenguaje principal", "Python 3.12 (90 %) · CSS embebido en Streamlit (10 %)"],
+      ["Aplicación publicada", "https://miadsatde-h9fndjhfg7esaeet.centralus-01.azurewebsites.net/"],
+      ["Hosting", "Azure App Service (Linux · Python 3.12 · plan B1 · región Central US)"],
+      ["Recursos Azure", "RG: rg-miad-satde · Plan: plan-miad-satde · App: miadsatde"],
+      ["Startup command", "python -m streamlit run app.py --server.port 8000 --server.address 0.0.0.0"],
     ],
     [2400, 6960]
   ),
+  callout("Aplicación en producción",
+    "La aplicación ya está desplegada y accesible públicamente; el detalle paso a paso del despliegue (Azure CLI y Portal) se documenta en la sección 4 del Manual de Usuario.",
+    OK),
 
   H("4.2 Estructura de carpetas", HeadingLevel.HEADING_2),
   dataTable(
@@ -516,6 +526,8 @@ const partIV = [
       ["Carga masiva con 11.500 filas sintéticas", "Rendimiento", "Procesamiento completo bajo 5 segundos en entorno local; descarga de CSV de resultados."],
       ["Insights 360 sobre cohorte cargada", "Funcional", "Cuatro pestañas se renderizan sin errores."],
       ["Categoría desconocida en CSV", "Resiliencia", "OneHotEncoder con handle_unknown='ignore' evita fallo, se emite advertencia visible al usuario."],
+      ["Acceso a la URL pública de Azure", "Despliegue", "Las 5 páginas cargan correctamente desde el navegador sin instalación local."],
+      ["Clasificación en 5 bandas", "Funcional", "Una cohorte de prueba se distribuye en las cinco categorías (Crítico/Alto/Medio/Normal/Bajo) según los cortes exactos."],
     ],
     [3000, 2000, 4360]
   ),
