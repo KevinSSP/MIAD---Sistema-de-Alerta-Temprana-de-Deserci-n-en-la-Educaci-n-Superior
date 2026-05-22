@@ -47,44 +47,23 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------------------------
-# Tema (claro / oscuro)
+# Paleta corporativa (tema claro único)
 # ---------------------------------------------------------------------------
-if "theme" not in st.session_state:
-    st.session_state["theme"] = "light"
-
-PALETTES = {
-    "light": {
-        "primary": "#1d4ed8",
-        "primary_dark": "#1e3a8a",
-        "ink": "#0f172a",
-        "ink_soft": "#334155",
-        "muted": "#64748b",
-        "line": "#e2e8f0",
-        "bg": "#ffffff",
-        "bg_soft": "#f8fafc",
-        "accent": "#0ea5e9",
-        "card_bg": "#ffffff",
-        "header_text": "#ffffff",
-        "input_bg": "#ffffff",
-        "scheme": "light",
-    },
-    "dark": {
-        "primary": "#60a5fa",
-        "primary_dark": "#1d4ed8",
-        "ink": "#f8fafc",
-        "ink_soft": "#cbd5e1",
-        "muted": "#94a3b8",
-        "line": "#1e293b",
-        "bg": "#0b1220",
-        "bg_soft": "#111a2e",
-        "accent": "#38bdf8",
-        "card_bg": "#111a2e",
-        "header_text": "#f8fafc",
-        "input_bg": "#0f172a",
-        "scheme": "dark",
-    },
+BRAND = {
+    "primary":      "#1d4ed8",  # azul corporativo (blue-700)
+    "primary_dark": "#1e3a8a",  # navy (blue-900)
+    "ink":          "#0f172a",  # slate-900
+    "ink_soft":     "#334155",  # slate-700
+    "muted":        "#64748b",  # slate-500
+    "line":         "#e2e8f0",  # slate-200
+    "bg":           "#ffffff",
+    "bg_soft":      "#f8fafc",  # slate-50
+    "accent":       "#0ea5e9",  # sky-500
+    "card_bg":      "#ffffff",
+    "header_text":  "#ffffff",
+    "input_bg":     "#ffffff",
+    "scheme":       "light",
 }
-BRAND = PALETTES[st.session_state["theme"]]
 
 # Paleta cualitativa para gráficos
 QUAL_PALETTE = [
@@ -323,22 +302,6 @@ CUSTOM_CSS = f"""
     margin-top: 28px; padding-top: 14px; border-top: 1px solid {BRAND['line']};
   }}
 
-  /* Botón de tema (toggle) */
-  div.theme-toggle-wrap .stButton > button {{
-    background: {BRAND['card_bg']} !important;
-    color: {BRAND['ink']} !important;
-    border: 1px solid {BRAND['line']} !important;
-    border-radius: 999px !important;
-    padding: 6px 14px !important;
-    font-weight: 600 !important;
-    box-shadow: 0 2px 8px -4px rgba(15,23,42,0.18);
-  }}
-  div.theme-toggle-wrap .stButton > button:hover {{
-    background: {BRAND['bg_soft']} !important;
-    border-color: {BRAND['primary']} !important;
-    color: {BRAND['primary']} !important;
-  }}
-
   /* Esconder marca por defecto de Streamlit */
   #MainMenu, footer {{visibility: hidden;}}
 </style>
@@ -401,30 +364,19 @@ def page_hero(eyebrow: str, title: str, subtitle: str) -> None:
 
 def app_header() -> None:
     today = datetime.now().strftime("%d %b %Y")
-    is_dark = st.session_state.get("theme") == "dark"
-    col_hdr, col_btn = st.columns([0.88, 0.12])
-    with col_hdr:
-        st.markdown(
-            f'<div class="app-header">'
-            f'<div class="brand">'
-            f'<div class="logo">🎓</div>'
-            f'<div>'
-            f'<div class="subtitle">MIAD · Universidad de los Andes</div>'
-            f'<div class="title">Sistema de Alerta Temprana de Deserción</div>'
-            f'</div>'
-            f'</div>'
-            f'<div class="meta">Modelo XGBoost v1.1.1 · {today}</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-    with col_btn:
-        st.markdown('<div class="theme-toggle-wrap">', unsafe_allow_html=True)
-        label = "☀️ Modo claro" if is_dark else "🌙 Modo oscuro"
-        if st.button(label, key="theme_toggle", use_container_width=True,
-                     help="Cambiar entre tema claro y oscuro"):
-            st.session_state["theme"] = "light" if is_dark else "dark"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="app-header">'
+        f'<div class="brand">'
+        f'<div class="logo">🎓</div>'
+        f'<div>'
+        f'<div class="subtitle">MIAD · Universidad de los Andes</div>'
+        f'<div class="title">Sistema de Alerta Temprana de Deserción</div>'
+        f'</div>'
+        f'</div>'
+        f'<div class="meta">Modelo XGBoost v1.1.1 · {today}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def section_title(group: str) -> None:
