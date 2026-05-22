@@ -726,11 +726,27 @@ def page_ayuda() -> None:
         rows.append({"Variable": c, "Etiqueta": LABELS.get(c, c), "Tipo": tipo, "Valores": valores})
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
-    st.markdown("##### Umbrales de riesgo")
-    c1, c2, c3 = st.columns(3)
-    c1.markdown(kpi_card("Bajo", "< 30 %", "Seguimiento estándar", "bajo"), unsafe_allow_html=True)
-    c2.markdown(kpi_card("Medio", "30 – 60 %", "Seguimiento focalizado", "medio"), unsafe_allow_html=True)
-    c3.markdown(kpi_card("Alto", "≥ 60 %", "Intervención prioritaria", "alto"), unsafe_allow_html=True)
+    st.markdown("##### Umbrales de riesgo (5 categorías)")
+    st.caption(
+        "Cortes calibrados sobre la *Tabla de Eficiencia Operativa Real*. "
+        "Los límites se aplican sobre la probabilidad de deserción estimada por el modelo."
+    )
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.markdown(kpi_card("Bajo",    "< 31.0 %",       "Permanencia esperada",       "bajo"),    unsafe_allow_html=True)
+    c2.markdown(kpi_card("Normal",  "31.0 – 51.3 %",  "Seguimiento estándar",       "normal"),  unsafe_allow_html=True)
+    c3.markdown(kpi_card("Medio",   "51.3 – 69.3 %",  "Plan de acompañamiento",     "medio"),   unsafe_allow_html=True)
+    c4.markdown(kpi_card("Alto",    "69.3 – 84.9 %",  "Intervención focalizada",    "alto"),    unsafe_allow_html=True)
+    c5.markdown(kpi_card("Crítico", "≥ 84.9 %",       "Intervención inmediata",     "critico"), unsafe_allow_html=True)
+
+    st.markdown("&nbsp;")
+    umbrales_df = pd.DataFrame([
+        {"Categoría": "Bajo",    "Prob. mínima": "0.0089", "Prob. máxima": "0.3097", "% población esperado": "53.07 %", "Tasa deserción interna": "6.42 %",  "Acción sugerida": "Permanencia"},
+        {"Categoría": "Normal",  "Prob. mínima": "0.3098", "Prob. máxima": "0.5132", "% población esperado": "13.00 %", "Tasa deserción interna": "23.14 %", "Acción sugerida": "Seguimiento"},
+        {"Categoría": "Medio",   "Prob. mínima": "0.5133", "Prob. máxima": "0.6921", "% población esperado": "8.54 %",  "Tasa deserción interna": "38.59 %", "Acción sugerida": "Plan de acompañamiento"},
+        {"Categoría": "Alto",    "Prob. mínima": "0.6927", "Prob. máxima": "0.8486", "% población esperado": "8.89 %",  "Tasa deserción interna": "57.93 %", "Acción sugerida": "Intervención focalizada"},
+        {"Categoría": "Crítico", "Prob. mínima": "0.8487", "Prob. máxima": "0.9803", "% población esperado": "16.50 %", "Tasa deserción interna": "83.97 %", "Acción sugerida": "Intervención inmediata"},
+    ])
+    st.dataframe(umbrales_df, use_container_width=True, hide_index=True)
 
     st.markdown(
         "<div class='footer-note'>Equipo Grupo 10 · MIAD · Universidad de los Andes · "
