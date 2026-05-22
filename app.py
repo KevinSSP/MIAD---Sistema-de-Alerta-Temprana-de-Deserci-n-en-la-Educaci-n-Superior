@@ -68,6 +68,32 @@ QUAL_PALETTE = [
 CUSTOM_CSS = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=block');
+  @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=block');
+
+  /* Forzar tema light en el navegador */
+  :root {{ color-scheme: light; }}
+  html, body {{ color-scheme: light; background: #ffffff; }}
+
+  /* Fix iconos nativos de Streamlit (colapsar sidebar, file uploader, etc.) */
+  span[data-testid="stIconMaterial"],
+  .material-symbols-rounded,
+  [class*="material-symbols"] {{
+    font-family: 'Material Symbols Rounded' !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    font-size: 1.25rem;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'liga';
+  }}
 
   html, body, [class*="st-"], .stMarkdown, .stTextInput, .stSelectbox, .stNumberInput {{
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
