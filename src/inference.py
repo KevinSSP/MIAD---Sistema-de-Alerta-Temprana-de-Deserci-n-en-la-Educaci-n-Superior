@@ -111,24 +111,43 @@ def _prepare(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _transform(df_in: pd.DataFrame) -> np.ndarray:
-    """Aplica preprocesador y añade columnas remainder esperadas por el modelo.
+    """Aplica preprocesador y, si hace falta, concatena columnas remainder.
 
-    El preprocesador serializado perdió la lista de columnas remainder, pero el
-    booster sigue esperando: anio_registro y los tres binarios. Se concatenan
-    al final manteniendo el orden definido en REM_COLS.
+    Algunos bundles del modelo perdieron la lista de columnas remainder en
+    el ``ColumnTransformer`` y requieren que se agreguen manualmente
+    (``anio_registro`` + binarios). Otros bundles ya las incluyen y agregarlas
+    duplicaría features. Detectamos cuál es el caso comparando con el número
+    de features esperado por el booster.
     """
     bundle = load_model()
     pre = bundle["preprocessor"]
+    mdl = bundle["xgboost"]
     X_pre = pre.transform(df_in[RAW_COLS])
     if hasattr(X_pre, "toarray"):
         X_pre = X_pre.toarray()
     X_pre = np.asarray(X_pre, dtype=float)
     if X_pre.ndim == 1:
         X_pre = X_pre.reshape(1, -1)
-    rem = df_in[REM_COLS].to_numpy(dtype=float)
-    if rem.ndim == 1:
-        rem = rem.reshape(1, -1)
-    return np.hstack([X_pre, rem])
+
+    expected = getattr(mdl, "n_features_in_", None)
+    if expected is None:
+        try:
+            expected = mdl.get_booster().num_features()
+        except Exception:
+            expected = X_pre.shape[1] + len(REM_COLS)
+
+    n_pre = X_pre.shape[1]
+    if n_pre == expected:
+        return X_pre
+    if n_pre + len(REM_COLS) == expected:
+        rem = df_in[REM_COLS].to_numpy(dtype=float)
+        if rem.ndim == 1:
+            rem = rem.reshape(1, -1)
+        return np.hstack([X_pre, rem])
+    raise RuntimeError(
+        f"Inconsistencia de features: el preprocesador produjo {n_pre} columnas "
+        f"y el modelo espera {expected}. Verifique la versión del bundle."
+    )
 
 
 def predict(df: pd.DataFrame) -> pd.DataFrame:

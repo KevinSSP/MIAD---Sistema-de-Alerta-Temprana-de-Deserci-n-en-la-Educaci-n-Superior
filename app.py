@@ -34,6 +34,7 @@ from src.schema import (
     ORD_COLS,
     RAW_COLS,
     RISK_COLORS,
+    RISK_THRESHOLDS,
 )
 
 # ---------------------------------------------------------------------------
@@ -481,13 +482,13 @@ def page_individual() -> None:
         "bajo"
     )
 
-    if prob >= 0.85:
+    if prob >= RISK_THRESHOLDS["critico"]:
         decision = "Intervención inmediata"
-    elif prob >= 0.69:
+    elif prob >= RISK_THRESHOLDS["alto"]:
         decision = "Intervención focalizada"
-    elif prob >= 0.51:
+    elif prob >= RISK_THRESHOLDS["medio"]:
         decision = "Plan de acompañamiento"
-    elif prob >= 0.31:
+    elif prob >= RISK_THRESHOLDS["normal"]:
         decision = "Seguimiento"
     else:
         decision = "Permanencia"

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from .inference import load_model, transform_features
-from .schema import LABELS, RISK_COLORS
+from .schema import LABELS, RISK_COLORS, RISK_THRESHOLDS
 
 
 # Mapa de nombres internos del modelo → variable raíz humana
@@ -67,23 +67,23 @@ def top_drivers(record: dict, k: int = 5) -> pd.DataFrame:
 
 def recommendation_text(prob: float, drivers: pd.DataFrame) -> str:
     """Genera una recomendación breve para consejería académica."""
-    if prob >= 0.85:
+    if prob >= RISK_THRESHOLDS["critico"]:
         base = (
             "Riesgo crítico de deserción (≥ 85 %). Intervención inmediata: "
             "asignar tutor académico, plan psicosocial, revisión de carga y "
             "validación urgente de apoyos financieros (ICETEX/beca)."
         )
-    elif prob >= 0.69:
+    elif prob >= RISK_THRESHOLDS["alto"]:
         base = (
             "Riesgo alto. Intervención prioritaria: tutoría académica "
             "personalizada, monitoreo quincenal y acompañamiento psicosocial."
         )
-    elif prob >= 0.51:
+    elif prob >= RISK_THRESHOLDS["medio"]:
         base = (
             "Riesgo medio. Seguimiento mensual con tutorías focalizadas en "
             "materias críticas y orientación vocacional."
         )
-    elif prob >= 0.31:
+    elif prob >= RISK_THRESHOLDS["normal"]:
         base = (
             "Riesgo normal. Mantener seguimiento estándar e incluir al "
             "estudiante en programas de bienestar y orientación académica."

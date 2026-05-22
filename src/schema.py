@@ -120,18 +120,18 @@ FORM_GROUPS = {
     ],
 }
 
-# Umbrales de riesgo (5 categorías) calibrados sobre la tabla de eficiencia
-# operativa: límites inferiores de cada banda en el set de validación.
-#   Bajo     [0.009 , 0.310)   tasa de deserción interna  6.4 %
-#   Normal   [0.310 , 0.513)   tasa de deserción interna 23.1 %
-#   Medio    [0.513 , 0.692)   tasa de deserción interna 38.6 %
-#   Alto     [0.692 , 0.849)   tasa de deserción interna 57.9 %
-#   Crítico  [0.849 , 1.000]   tasa de deserción interna 84.0 %
+# Umbrales de riesgo (5 categorías) calibrados sobre la TABLA DE EFICIENCIA
+# OPERATIVA REAL. Cada umbral es el límite inferior exacto de la banda superior.
+#   Bajo     [0.008862 , 0.309797)   53.07 % pob.   6.42 % desercion interna
+#   Normal   [0.309797 , 0.513337)   13.00 % pob.  23.14 % desercion interna
+#   Medio    [0.513337 , 0.692686)    8.54 % pob.  38.59 % desercion interna
+#   Alto     [0.692686 , 0.848714)    8.89 % pob.  57.93 % desercion interna
+#   Crítico  [0.848714 , 1.000000]   16.50 % pob.  83.97 % desercion interna
 RISK_THRESHOLDS = {
-    "normal": 0.31,
-    "medio": 0.51,
-    "alto": 0.69,
-    "critico": 0.85,
+    "normal":  0.309797,
+    "medio":   0.513337,
+    "alto":    0.692686,
+    "critico": 0.848714,
 }
 
 # Orden canónico de las categorías (peor → mejor)
