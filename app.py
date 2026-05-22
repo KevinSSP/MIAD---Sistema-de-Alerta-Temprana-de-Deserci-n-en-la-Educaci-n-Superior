@@ -46,18 +46,45 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Paleta corporativa
-BRAND = {
-    "primary": "#1d4ed8",      # azul corporativo
-    "primary_dark": "#1e3a8a",
-    "ink": "#0f172a",          # slate-900
-    "ink_soft": "#334155",     # slate-700
-    "muted": "#64748b",        # slate-500
-    "line": "#e2e8f0",         # slate-200
-    "bg": "#ffffff",
-    "bg_soft": "#f8fafc",
-    "accent": "#0ea5e9",
+# ---------------------------------------------------------------------------
+# Tema (claro / oscuro)
+# ---------------------------------------------------------------------------
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "light"
+
+PALETTES = {
+    "light": {
+        "primary": "#1d4ed8",
+        "primary_dark": "#1e3a8a",
+        "ink": "#0f172a",
+        "ink_soft": "#334155",
+        "muted": "#64748b",
+        "line": "#e2e8f0",
+        "bg": "#ffffff",
+        "bg_soft": "#f8fafc",
+        "accent": "#0ea5e9",
+        "card_bg": "#ffffff",
+        "header_text": "#ffffff",
+        "input_bg": "#ffffff",
+        "scheme": "light",
+    },
+    "dark": {
+        "primary": "#60a5fa",
+        "primary_dark": "#1d4ed8",
+        "ink": "#f8fafc",
+        "ink_soft": "#cbd5e1",
+        "muted": "#94a3b8",
+        "line": "#1e293b",
+        "bg": "#0b1220",
+        "bg_soft": "#111a2e",
+        "accent": "#38bdf8",
+        "card_bg": "#111a2e",
+        "header_text": "#f8fafc",
+        "input_bg": "#0f172a",
+        "scheme": "dark",
+    },
 }
+BRAND = PALETTES[st.session_state["theme"]]
 
 # Paleta cualitativa para gráficos
 QUAL_PALETTE = [
@@ -71,9 +98,13 @@ CUSTOM_CSS = f"""
   @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=block');
   @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=block');
 
-  /* Forzar tema light en el navegador */
-  :root {{ color-scheme: light; }}
-  html, body {{ color-scheme: light; background: #ffffff; }}
+  /* Tema activo */
+  :root {{ color-scheme: {BRAND['scheme']}; }}
+  html, body, .stApp {{ color-scheme: {BRAND['scheme']}; background: {BRAND['bg']} !important; }}
+  .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
+    background: {BRAND['bg']} !important;
+  }}
+  [data-testid="stHeader"] {{ border-bottom: 1px solid {BRAND['line']}; }}
 
   /* Fix iconos nativos de Streamlit (colapsar sidebar, file uploader, etc.) */
   span[data-testid="stIconMaterial"],
@@ -142,7 +173,7 @@ CUSTOM_CSS = f"""
   /* Hero por página */
   .page-hero {{
     border: 1px solid {BRAND['line']}; border-radius: 16px;
-    background: linear-gradient(180deg,#ffffff 0%, {BRAND['bg_soft']} 100%);
+    background: linear-gradient(180deg, {BRAND['card_bg']} 0%, {BRAND['bg_soft']} 100%);
     padding: 22px 26px; margin-bottom: 22px;
   }}
   .page-hero .eyebrow {{
@@ -167,7 +198,7 @@ CUSTOM_CSS = f"""
   /* KPI cards */
   .kpi-card {{
     position: relative; overflow: hidden;
-    background: #ffffff;
+    background: {BRAND['card_bg']};
     border: 1px solid {BRAND['line']}; border-radius: 14px;
     padding: 18px 20px;
     box-shadow: 0 1px 2px rgba(15,23,42,0.04);
@@ -181,8 +212,10 @@ CUSTOM_CSS = f"""
     content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
     background: {BRAND['primary']};
   }}
+  .kpi-card.critico::before {{ background: {RISK_COLORS['Crítico']}; }}
   .kpi-card.alto::before    {{ background: {RISK_COLORS['Alto']}; }}
   .kpi-card.medio::before   {{ background: {RISK_COLORS['Medio']}; }}
+  .kpi-card.normal::before  {{ background: {RISK_COLORS['Normal']}; }}
   .kpi-card.bajo::before    {{ background: {RISK_COLORS['Bajo']}; }}
   .kpi-card .label {{
     font-size: 0.72rem; color: {BRAND['muted']};
@@ -235,6 +268,29 @@ CUSTOM_CSS = f"""
   /* Inputs */
   .stTextInput input, .stNumberInput input, .stSelectbox > div > div {{
     border-radius: 10px !important;
+    background: {BRAND['input_bg']} !important;
+    color: {BRAND['ink']} !important;
+  }}
+  .stTextInput label, .stNumberInput label, .stSelectbox label,
+  .stMultiSelect label, .stRadio label, .stCheckbox label {{
+    color: {BRAND['ink_soft']} !important;
+  }}
+  div[data-baseweb="select"] > div, div[data-baseweb="input"] > div {{
+    background: {BRAND['input_bg']} !important;
+    border-color: {BRAND['line']} !important;
+  }}
+  .stMarkdown, .stMarkdown p, .stMarkdown li {{ color: {BRAND['ink_soft']}; }}
+  .stDataFrame, .stTable {{ background: {BRAND['card_bg']}; }}
+  div[data-testid="stExpander"] {{
+    background: {BRAND['card_bg']}; border: 1px solid {BRAND['line']}; border-radius: 12px;
+  }}
+  div[data-testid="stExpander"] summary {{ color: {BRAND['ink']} !important; }}
+  div[data-testid="stFileUploaderDropzone"] {{
+    background: {BRAND['bg_soft']} !important; border-color: {BRAND['line']} !important;
+  }}
+  div[data-testid="stAlert"] {{
+    background: {BRAND['bg_soft']} !important; color: {BRAND['ink']} !important;
+    border: 1px solid {BRAND['line']};
   }}
 
   /* Sidebar */
@@ -267,6 +323,22 @@ CUSTOM_CSS = f"""
     margin-top: 28px; padding-top: 14px; border-top: 1px solid {BRAND['line']};
   }}
 
+  /* Botón de tema (toggle) */
+  div.theme-toggle-wrap .stButton > button {{
+    background: {BRAND['card_bg']} !important;
+    color: {BRAND['ink']} !important;
+    border: 1px solid {BRAND['line']} !important;
+    border-radius: 999px !important;
+    padding: 6px 14px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 8px -4px rgba(15,23,42,0.18);
+  }}
+  div.theme-toggle-wrap .stButton > button:hover {{
+    background: {BRAND['bg_soft']} !important;
+    border-color: {BRAND['primary']} !important;
+    color: {BRAND['primary']} !important;
+  }}
+
   /* Esconder marca por defecto de Streamlit */
   #MainMenu, footer {{visibility: hidden;}}
 </style>
@@ -283,12 +355,17 @@ def _apply_chart_style(fig, height: int = 360, showlegend: bool = True):
         margin=dict(l=10, r=10, t=40, b=10),
         font=dict(family="Inter, Segoe UI, sans-serif", size=12, color=BRAND["ink_soft"]),
         title=dict(font=dict(size=15, color=BRAND["ink"]), x=0.0, xanchor="left"),
-        paper_bgcolor="white",
-        plot_bgcolor="white",
+        paper_bgcolor=BRAND["card_bg"],
+        plot_bgcolor=BRAND["card_bg"],
         showlegend=showlegend,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=11)),
-        xaxis=dict(showgrid=False, linecolor=BRAND["line"], tickcolor=BRAND["line"]),
-        yaxis=dict(showgrid=True, gridcolor=BRAND["line"], zeroline=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+                    font=dict(size=11, color=BRAND["ink_soft"])),
+        xaxis=dict(showgrid=False, linecolor=BRAND["line"], tickcolor=BRAND["line"],
+                   tickfont=dict(color=BRAND["ink_soft"]),
+                   title=dict(font=dict(color=BRAND["ink_soft"]))),
+        yaxis=dict(showgrid=True, gridcolor=BRAND["line"], zeroline=False,
+                   tickfont=dict(color=BRAND["ink_soft"]),
+                   title=dict(font=dict(color=BRAND["ink_soft"]))),
     )
     return fig
 
@@ -324,19 +401,30 @@ def page_hero(eyebrow: str, title: str, subtitle: str) -> None:
 
 def app_header() -> None:
     today = datetime.now().strftime("%d %b %Y")
-    st.markdown(
-        f'<div class="app-header">'
-        f'<div class="brand">'
-        f'<div class="logo">🎓</div>'
-        f'<div>'
-        f'<div class="subtitle">MIAD · Universidad de los Andes</div>'
-        f'<div class="title">Sistema de Alerta Temprana de Deserción</div>'
-        f'</div>'
-        f'</div>'
-        f'<div class="meta">Modelo XGBoost v1.1.1 · {today}</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
+    is_dark = st.session_state.get("theme") == "dark"
+    col_hdr, col_btn = st.columns([0.88, 0.12])
+    with col_hdr:
+        st.markdown(
+            f'<div class="app-header">'
+            f'<div class="brand">'
+            f'<div class="logo">🎓</div>'
+            f'<div>'
+            f'<div class="subtitle">MIAD · Universidad de los Andes</div>'
+            f'<div class="title">Sistema de Alerta Temprana de Deserción</div>'
+            f'</div>'
+            f'</div>'
+            f'<div class="meta">Modelo XGBoost v1.1.1 · {today}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    with col_btn:
+        st.markdown('<div class="theme-toggle-wrap">', unsafe_allow_html=True)
+        label = "☀️ Modo claro" if is_dark else "🌙 Modo oscuro"
+        if st.button(label, key="theme_toggle", use_container_width=True,
+                     help="Cambiar entre tema claro y oscuro"):
+            st.session_state["theme"] = "light" if is_dark else "dark"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def section_title(group: str) -> None:
@@ -405,9 +493,11 @@ def page_inicio() -> None:
         "<div class='page-hero' style='margin-top:8px'>"
         "<div class='eyebrow'>Cómo se interpreta</div>"
         "<p style='margin-top:8px'>"
-        f"<b style='color:{RISK_COLORS['Bajo']}'>● Bajo</b> &lt; 30 % &nbsp;&nbsp; "
-        f"<b style='color:{RISK_COLORS['Medio']}'>● Medio</b> 30 – 60 % &nbsp;&nbsp; "
-        f"<b style='color:{RISK_COLORS['Alto']}'>● Alto</b> ≥ 60 %"
+        f"<b style='color:{RISK_COLORS['Bajo']}'>● Bajo</b> &lt; 31 % &nbsp;&nbsp; "
+        f"<b style='color:{RISK_COLORS['Normal']}'>● Normal</b> 31 – 51 % &nbsp;&nbsp; "
+        f"<b style='color:{RISK_COLORS['Medio']}'>● Medio</b> 51 – 69 % &nbsp;&nbsp; "
+        f"<b style='color:{RISK_COLORS['Alto']}'>● Alto</b> 69 – 85 % &nbsp;&nbsp; "
+        f"<b style='color:{RISK_COLORS['Crítico']}'>● Crítico</b> ≥ 85 %"
         "</p></div>",
         unsafe_allow_html=True,
     )
@@ -431,7 +521,24 @@ def page_individual() -> None:
         return
     prob = float(preds.loc[0, "prob_desercion"])
     riesgo = preds.loc[0, "riesgo"]
-    variant = riesgo.lower()
+    variant = (
+        "critico" if riesgo == "Crítico" else
+        "alto" if riesgo == "Alto" else
+        "medio" if riesgo == "Medio" else
+        "normal" if riesgo == "Normal" else
+        "bajo"
+    )
+
+    if prob >= 0.85:
+        decision = "Intervención inmediata"
+    elif prob >= 0.69:
+        decision = "Intervención focalizada"
+    elif prob >= 0.51:
+        decision = "Plan de acompañamiento"
+    elif prob >= 0.31:
+        decision = "Seguimiento"
+    else:
+        decision = "Permanencia"
 
     st.markdown("&nbsp;")
     c1, c2 = st.columns([1, 2])
@@ -443,7 +550,7 @@ def page_individual() -> None:
             unsafe_allow_html=True,
         )
         st.markdown(
-            kpi_card("Decisión sugerida", "Intervención" if prob >= 0.6 else ("Seguimiento" if prob >= 0.3 else "Permanencia"),
+            kpi_card("Decisión sugerida", decision,
                      "Según umbrales institucionales", variant),
             unsafe_allow_html=True,
         )
@@ -528,12 +635,13 @@ def page_carga_masiva() -> None:
     k = summary["kpis"]
     c1, c2, c3, c4 = st.columns(4)
     c1.markdown(kpi_card("Total estudiantes", f"{k['total']:,}"), unsafe_allow_html=True)
-    c2.markdown(kpi_card("Riesgo alto", f"{k['alto']:,}", "Casos prioritarios", "alto"), unsafe_allow_html=True)
-    c3.markdown(kpi_card("% riesgo alto", f"{k['pct_alto']*100:.1f}%", "Proporción de la cohorte", "alto"), unsafe_allow_html=True)
+    c2.markdown(kpi_card("Riesgo crítico", f"{k['critico']:,}", "Intervención inmediata", "critico"), unsafe_allow_html=True)
+    c3.markdown(kpi_card("% prioritarios", f"{k['pct_alto']*100:.1f}%", "Crítico + Alto", "alto"), unsafe_allow_html=True)
     c4.markdown(kpi_card("Probabilidad media", f"{k['prom_riesgo']*100:.1f}%", "Promedio cohorte"), unsafe_allow_html=True)
 
     st.markdown("##### Resultados")
-    filtro = st.multiselect("Filtrar por nivel de riesgo", ["Alto", "Medio", "Bajo"], default=["Alto", "Medio", "Bajo"])
+    risk_filter_opts = ["Crítico", "Alto", "Medio", "Normal", "Bajo"]
+    filtro = st.multiselect("Filtrar por nivel de riesgo", risk_filter_opts, default=risk_filter_opts)
     out = pd.concat([df_in.reset_index(drop=True), preds.reset_index(drop=True)], axis=1)
     out_view = out[out["riesgo"].isin(filtro)].copy()
     out_view["prob_desercion"] = (out_view["prob_desercion"] * 100).round(2)
@@ -567,11 +675,12 @@ def page_insights() -> None:
     k = summary["kpis"]
     df = summary["df"]
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.markdown(kpi_card("Estudiantes", f"{k['total']:,}"), unsafe_allow_html=True)
-    c2.markdown(kpi_card("Riesgo alto", f"{k['alto']:,}", f"{k['pct_alto']*100:.1f}% del total", "alto"), unsafe_allow_html=True)
-    c3.markdown(kpi_card("Riesgo medio", f"{k['medio']:,}", variant="medio"), unsafe_allow_html=True)
-    c4.markdown(kpi_card("Riesgo bajo", f"{k['bajo']:,}", variant="bajo"), unsafe_allow_html=True)
+    c2.markdown(kpi_card("Crítico", f"{k['critico']:,}", "Intervención inmediata", "critico"), unsafe_allow_html=True)
+    c3.markdown(kpi_card("Alto", f"{k['alto']:,}", "Prioritario", "alto"), unsafe_allow_html=True)
+    c4.markdown(kpi_card("Medio", f"{k['medio']:,}", variant="medio"), unsafe_allow_html=True)
+    c5.markdown(kpi_card("% prioritarios", f"{k['pct_alto']*100:.1f}%", "Crítico + Alto", "alto"), unsafe_allow_html=True)
 
     tab1, tab2, tab3, tab4 = st.tabs(["📈 Distribución", "👥 Demográfico / Socioeconómico", "🎓 Académico", "🔎 Detalle"])
 
@@ -586,7 +695,9 @@ def page_insights() -> None:
             fig.update_layout(bargap=0.05, legend_title_text="Riesgo")
             st.plotly_chart(fig, use_container_width=True)
         with c2:
-            risk_counts = df["riesgo"].value_counts().reindex(["Alto", "Medio", "Bajo"]).fillna(0).reset_index()
+            risk_counts = df["riesgo"].value_counts().reindex(
+                ["Crítico", "Alto", "Medio", "Normal", "Bajo"]
+            ).fillna(0).reset_index()
             risk_counts.columns = ["riesgo", "n"]
             fig = px.pie(risk_counts, names="riesgo", values="n", color="riesgo",
                          color_discrete_map=RISK_COLORS, hole=0.6,

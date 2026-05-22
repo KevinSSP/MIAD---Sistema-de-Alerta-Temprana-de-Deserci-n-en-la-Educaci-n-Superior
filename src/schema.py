@@ -120,14 +120,39 @@ FORM_GROUPS = {
     ],
 }
 
-# Umbrales de riesgo (semáforo)
-RISK_THRESHOLDS = {"medio": 0.30, "alto": 0.60}
-RISK_COLORS = {"Bajo": "#22c55e", "Medio": "#eab308", "Alto": "#ef4444"}
+# Umbrales de riesgo (5 categorías) calibrados sobre la tabla de eficiencia
+# operativa: límites inferiores de cada banda en el set de validación.
+#   Bajo     [0.009 , 0.310)   tasa de deserción interna  6.4 %
+#   Normal   [0.310 , 0.513)   tasa de deserción interna 23.1 %
+#   Medio    [0.513 , 0.692)   tasa de deserción interna 38.6 %
+#   Alto     [0.692 , 0.849)   tasa de deserción interna 57.9 %
+#   Crítico  [0.849 , 1.000]   tasa de deserción interna 84.0 %
+RISK_THRESHOLDS = {
+    "normal": 0.31,
+    "medio": 0.51,
+    "alto": 0.69,
+    "critico": 0.85,
+}
+
+# Orden canónico de las categorías (peor → mejor)
+RISK_ORDER = ["Crítico", "Alto", "Medio", "Normal", "Bajo"]
+
+RISK_COLORS = {
+    "Crítico": "#b91c1c",
+    "Alto":    "#f97316",
+    "Medio":   "#eab308",
+    "Normal":  "#0ea5e9",
+    "Bajo":    "#22c55e",
+}
 
 
 def risk_tier(prob: float) -> str:
+    if prob >= RISK_THRESHOLDS["critico"]:
+        return "Crítico"
     if prob >= RISK_THRESHOLDS["alto"]:
         return "Alto"
     if prob >= RISK_THRESHOLDS["medio"]:
         return "Medio"
+    if prob >= RISK_THRESHOLDS["normal"]:
+        return "Normal"
     return "Bajo"

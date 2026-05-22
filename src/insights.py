@@ -67,21 +67,31 @@ def top_drivers(record: dict, k: int = 5) -> pd.DataFrame:
 
 def recommendation_text(prob: float, drivers: pd.DataFrame) -> str:
     """Genera una recomendación breve para consejería académica."""
-    if prob >= 0.6:
+    if prob >= 0.85:
         base = (
-            "Riesgo alto de deserción. Se sugiere intervención prioritaria: "
-            "tutoría académica personalizada, revisión de carga, acompañamiento "
-            "psicosocial y verificación de apoyos financieros."
+            "Riesgo crítico de deserción (≥ 85 %). Intervención inmediata: "
+            "asignar tutor académico, plan psicosocial, revisión de carga y "
+            "validación urgente de apoyos financieros (ICETEX/beca)."
         )
-    elif prob >= 0.3:
+    elif prob >= 0.69:
         base = (
-            "Riesgo medio. Se recomienda seguimiento mensual, oferta de "
-            "tutorías focalizadas en materias críticas y orientación vocacional."
+            "Riesgo alto. Intervención prioritaria: tutoría académica "
+            "personalizada, monitoreo quincenal y acompañamiento psicosocial."
+        )
+    elif prob >= 0.51:
+        base = (
+            "Riesgo medio. Seguimiento mensual con tutorías focalizadas en "
+            "materias críticas y orientación vocacional."
+        )
+    elif prob >= 0.31:
+        base = (
+            "Riesgo normal. Mantener seguimiento estándar e incluir al "
+            "estudiante en programas de bienestar y orientación académica."
         )
     else:
         base = (
-            "Riesgo bajo. Mantener seguimiento estándar y reforzar programas "
-            "de bienestar para sostener la permanencia."
+            "Riesgo bajo. Permanencia esperada; reforzar programas de "
+            "bienestar y mentoría para sostener el desempeño."
         )
     if not drivers.empty:
         top = drivers.head(3)["factor"].tolist()
@@ -96,14 +106,19 @@ def cohort_summary(df_raw: pd.DataFrame, preds: pd.DataFrame) -> dict:
     df["riesgo"] = preds["riesgo"].values
 
     total = len(df)
-    by_risk = df["riesgo"].value_counts().reindex(["Alto", "Medio", "Bajo"]).fillna(0).astype(int)
+    risk_order = ["Crítico", "Alto", "Medio", "Normal", "Bajo"]
+    by_risk = df["riesgo"].value_counts().reindex(risk_order).fillna(0).astype(int)
 
+    prioritarios = int(by_risk.get("Crítico", 0) + by_risk.get("Alto", 0))
     kpis = {
         "total": total,
+        "critico": int(by_risk.get("Crítico", 0)),
         "alto": int(by_risk.get("Alto", 0)),
         "medio": int(by_risk.get("Medio", 0)),
+        "normal": int(by_risk.get("Normal", 0)),
         "bajo": int(by_risk.get("Bajo", 0)),
-        "pct_alto": float(by_risk.get("Alto", 0)) / total if total else 0.0,
+        "prioritarios": prioritarios,
+        "pct_alto": prioritarios / total if total else 0.0,
         "prom_riesgo": float(df["prob_desercion"].mean()) if total else 0.0,
     }
 
